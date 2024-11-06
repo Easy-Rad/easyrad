@@ -8,6 +8,7 @@ class UserConfig {
         this.FileName := FileName
         this.Comrad := Map()
         this.IV := Map("CDHB", Map(), "PRG", Map(), "Reform", Map(), "Beyond", Map())
+        this.AutoTriage := Map()
         this.loadConfig()
     }
 
