@@ -1,7 +1,10 @@
 ; EasyRad - Radiology Automation Suite
 ; by Tubo Shi MBChB
 
+;@Ahk2Exe-SetMainIcon Static\icon.ico
 #SingleInstance Force
+#Warn VarUnset, OutputDebug
+
 SetCapsLockState "AlwaysOff"
 
 #Include Src\Common.ahk

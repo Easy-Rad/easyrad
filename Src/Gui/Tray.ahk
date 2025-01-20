@@ -1,7 +1,9 @@
 #Include ..\Common.ahk
+#Include "..\Modules\AutoTriage\Tray.ahk"
 
-
+;@Ahk2Exe-IgnoreBegin
 TraySetIcon("Static/icon.ico")
+;@Ahk2Exe-IgnoreEnd
 
 tray := A_TrayMenu
 tray.delete
@@ -10,6 +12,9 @@ tray.Add
 tray.Add("Launch Radiology Bundle", startAll)
 tray.Add "Launch Inteleviewer", startIV
 tray.Add "Launch Comrad", startRIS
+tray.Add
+tray.Add("AutoTriage", AutoTriageMenu := Menu())
+AutoTriageTrayMenu.AddToMenu(AutoTriageMenu)
 tray.Add
 tray.AddStandard()
 
