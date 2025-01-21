@@ -99,7 +99,7 @@ class MainGui extends Gui {
         this.AddCheckBox(" xs130 yp20 vUseStudySelector", "Use study selector")
         this["UseStudySelector"].Value := Integer(Config.AutoTriage["UseStudySelector"])
         this.AddText("w" fieldWidth " xs10 yp25 Right", "Default rank:")
-        this.AddDropDownList("xp120 yp vDefaultTriageRank", ["Disabled","1","2","3","4","5"])
+        this.AddDropDownList("xp120 yp vDefaultTriageRank", ["Disabled", "1", "2", "3", "4", "5"])
         this["DefaultTriageRank"].Value := 1 + Integer(Config.AutoTriage["DefaultTriageRank"])
         this.AddButton("xp yp25 w120", "Forget Aliases").OnEvent("Click", ForgetAliases)
 

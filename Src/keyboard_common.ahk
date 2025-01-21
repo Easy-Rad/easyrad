@@ -27,8 +27,8 @@ Tab:: PowerScribeApp.NextTabStop()
 #HotIf InteleviewerApp.ViewerActive()
 
 F1:: {
-    Acc := InteleviewerApp.CurrentStudy.Acc
-    NHI := InteleviewerApp.CurrentStudy.NHI
+    Acc := InteleviewerApp.CurrentPatient().Acc
+    NHI := InteleviewerApp.CurrentPatient().NHI
 
     if (A_Clipboard == Acc) {
         A_Clipboard := NHI

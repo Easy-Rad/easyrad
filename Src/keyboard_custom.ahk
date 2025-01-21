@@ -111,7 +111,7 @@ Space:: TransientToolTip InteleviewerApp.GetCurrentTool()
   static toggle := 0
   A_Clipboard := ""
   if toggle = 0 {
-    A_Clipboard := InteleviewerApp.CurrentStudy.Acc
+    A_Clipboard := InteleviewerApp.CurrentPatient().Acc
     toggle := 1
   } else if toggle = 1 {
     A_Clipboard := InteleviewerApp.GetLatestAccession()
@@ -122,13 +122,13 @@ Space:: TransientToolTip InteleviewerApp.GetCurrentTool()
 }
 
 ;; Capture on-call template
-^+c:: EmacsApp.CaptureByProtocol("C", InteleviewerApp.CurrentStudy.Acc, "", "")
+^+c:: EmacsApp.CaptureByProtocol("C", InteleviewerApp.CurrentPatient().Acc, "", "")
 
 ;; Capture follow-ups
-^+f:: EmacsApp.CaptureByProtocol("F", InteleviewerApp.CurrentStudy.Acc, "", "")
+^+f:: EmacsApp.CaptureByProtocol("F", InteleviewerApp.CurrentPatient().Acc, "", "")
 
 ;; Capture a case to log
-^+l:: EmacsApp.CaptureByProtocol("L", InteleviewerApp.CurrentStudy.Acc, "", "")
+^+l:: EmacsApp.CaptureByProtocol("L", InteleviewerApp.CurrentPatient().Acc, "", "")
 
 
 ;; ===== InterleViewer Search =====

@@ -7,19 +7,20 @@ class InteleviewerApp {
     static WinTitle_Login := "INTELEPACS - InteleViewer Login"
     static RE_Dragged_Uid := "Drag started for thumbnail dataset PersistentImageId \[mSeriesInstanceUid=(?P<Uid>[0-9.]+),"
     static RE_Protocol_Match_Acc := "Loading matched prior study: Study \[[A-Za-z0-9-]+ Acc (?P<ACC>" RE_ACC ")"
-    static RE_ACC_PID := "Acc\[(?P<ACC>[A-Z0-9-]+)\] Pid\[(?P<NHI>[A-Z0-9-]+)\]"
+    static RE_ACC_PID := "Acc\[(?P<ACC>[A-Z0-9-_]+)\] Pid\[(?P<NHI>[A-Z0-9-_]+)\]"
+    static LogFilePath := A_Temp "\CViewer.log"
 
     static ActivateViewer() {
         SetTitleMatchMode "RegEx"
         WinActivate ".* InteleViewer.* ahk_exe InteleViewer.exe", , "^(Search.*)|(Chat.*)"
     }
 
-    static ActivateSearch() {
+    static ActivateSearchPage() {
         this.ActivateViewer()
         Send "/"
     }
 
-    static ActivateReport() {
+    static ActivateReportPage() {
         this.ActivateViewer()
         Send "v"
     }
@@ -29,8 +30,10 @@ class InteleviewerApp {
     }
 
     static ViewerActive() {
-        SetTitleMatchMode "RegEx"
-        return WinActive(this.WinTitle_Viewer, , this.WinTitle_Viewer_Exclude)
+        prev := SetTitleMatchMode("RegEx")
+        result := WinActive(this.WinTitle_Viewer, , this.WinTitle_Viewer_Exclude)
+        SetTitleMatchMode(prev)
+        return result
     }
 
     static WinExist() {
@@ -39,19 +42,12 @@ class InteleviewerApp {
 
     static LogFile() {
         ;; The entire log file, can be very big in size in a long session
-        DefaultLogFile := EnvGet("USERPROFILE") "\AppData\Local\Temp\CViewer.log"
-        PortableLogFile := A_Temp "\CViewer.log"
-
-        If FileExist(DefaultLogFile) and FileExist(PortableLogFile)
-            If FileGetTime(DefaultLogFile) > FileGetTime(PortableLogFile)
-                LogFile := DefaultLogFile
-            Else
-                LogFile := PortableLogFile
-        Else If FileExist(DefaultLogFile)
-            LogFile := DefaultLogFile
-        Else
-            LogFile := PortableLogFile
-        return FileRead(LogFile)
+        ;; Therefore only the last byte will be returned
+        file := FileOpen(this.LogFilePath, "r")
+        IsMoved := file.Seek(-1024 * 512)
+        content := file.Read()
+        file.Close()
+        return content
     }
 
     static TrimmedLogFile() {
@@ -94,53 +90,32 @@ class InteleviewerApp {
         return Result
     }
 
-    static CurrentPatientWithCaret() {
-        ViewerWinTitle := WinGetTitle(".* InteleViewer.* ahk_exe InteleViewer.exe", , "^(Search Tool.*)|(Chat.*)")
-        Needle := "(?P<Acc>[A-Z^]*)"
-        Pos := RegExMatch(ViewerWinTitle, Needle, &Match)
-        If Pos
-            return Match.Acc
-        Else
-            return ""
-    }
-
-    static CurrentStudy {
-        get {
-            Log := this.LogFile()
-            Needle := "s).*" . this.RE_ACC_PID
-            Pos := RegExMatch(Log, Needle, &match)
-            return match
-        }
-    }
-
-    static CurrentStudy1 {
-        get {
-            ;; Returns the current (most recent) Accession Number
-            ;; Based on Comrad integration log
-            Content := this.TrimmedLogFile()
-            Needle := "Comrad.*load request for Acc# (?P<Acc>.*)"
-            Pos := RegExMatch(Content, Needle, &Match)
-            If Pos
-                Acc := Match.Acc
-            Else
-                Acc := ""
-
-            Needle := "Acc\[" Acc "\] Pid\[(?P<NHI>" RE_NHI ")\]"
-            Pos := RegExMatch(Content, Needle, &Match)
-
-            If Pos
-                NHI := Match.NHI
-            Else {
-                ;; If the NHI is not found via triangulation using Accession, then do a raw search
-                RegExMatch(Content, "Pid\[(?P<NHI>" RE_NHI ")\]", &Match)
-                NHI := Match.NHI
+    static CurrentPatient() {
+        ;; Inteleviewer logs a lot of events in the format of "Acc[*.] Pid[*.]", corresponding to the current patient
+        ;; Search for the last occurence of Acc and Pid
+        ;; Because the logfile may get huge after periods of idling, we look it up in reverse in small chunks
+        ChunkSize := 64 * 1024
+        LogFile := FileOpen(this.LogFilePath, "r")
+        LogFile.Seek(-ChunkSize) ;; Search the last 256kB of the log file
+        Log := LogFile.Read()
+        Needle := "s).*" . this.RE_ACC_PID
+        while !(Pos := RegExMatch(Log, Needle, &match)) {
+            success := LogFile.Seek(-ChunkSize * 2, 1) ;; Search backwards for two chunks
+            if not success {
+                ;; If we are approaching the start of the file, the leftover space may not be enough
+                ppos := LogFile.Pos
+                LogFile.Seek(0)
+                Log := LogFile.Read(ppos)
+                if !(Pos := RegExMatch(Log, Needle, &match)) {
+                    ;; Do one last search of the remainder chunk, if not found, then NULL
+                    null_result := { NHI: "NULL_PATIENT_ID", ACC: "NULL_ACCESSION_NUMBER" }
+                    MsgBox null_result.NHI " " null_result.ACC
+                    return null_result
+                }
             }
-
-            return {
-                Acc: Acc,
-                NHI: NHI
-            }
+            Log := LogFile.Read(ChunkSize)
         }
+        return match
     }
 
     static GetLastDraggedAccession() {
@@ -156,7 +131,7 @@ class InteleviewerApp {
     static GetStudyDate(Acc) {
         try {
             ;; Try using InteleBrowser first
-            PriorStudies := this.QueryPriorStudies(this.CurrentStudy.NHI)
+            PriorStudies := this.QueryPriorStudies(this.CurrentPatient().NHI)
             For Study in PriorStudies {
                 If Study.ACC = Acc
                     return this.FormatDate(Study.Date)
@@ -174,7 +149,7 @@ class InteleviewerApp {
     static GetMatchedProtocolAccession() {
         ;; Get the accession of the image retrieved by the hanging protocol
         content := this.TrimmedLogFile()
-        NHI := this.CurrentStudy.NHI
+        NHI := this.CurrentPatient().NHI
         RE_prior := "Loading matched prior study: Study \[[-A-Za-z]+ Acc (?P<ACC>" RE_ACC ") Pid " nhi
         RegExMatch(content, RE_prior, &match)
         if match {
@@ -186,7 +161,7 @@ class InteleviewerApp {
     static GetLatestAccession() {
         ;; Get the last touched image accession within the current study
         ;; This include last dragged image and auto-matched image from hanging protocol
-        currentAccession := this.CurrentStudy.Acc
+        currentAccession := this.CurrentPatient().Acc
         lastDragged := this.GetLastDraggedAccession()
         matchedPrior := this.GetMatchedProtocolAccession()
         if (lastDragged && (lastDragged != currentAccession)) {
@@ -203,7 +178,7 @@ class InteleviewerApp {
 
     static GenerateComparisonLine(Acc) {
         ;; Returns a string of Study Description and Date of Study, for use in reports
-        PriorStudies := this.QueryPriorStudies(this.CurrentStudy.NHI)
+        PriorStudies := this.QueryPriorStudies(this.CurrentPatient().NHI)
         For Study in PriorStudies {
             If HasVal(["DX", "CR"], Study.Mod)
                 StudyDesc := "X-RAY " . Study.Desc
@@ -276,7 +251,7 @@ class InteleviewerApp {
     }
 
     static PriorStudiesListView() {
-        PriorStudies := this.QueryPriorStudies(this.CurrentStudy.NHI)
+        PriorStudies := this.QueryPriorStudies(this.CurrentPatient().NHI)
         Touched := this.GatherTouchedAccessions()
 
         g := Gui()
@@ -327,7 +302,7 @@ class InteleviewerApp {
     }
 
     static AccessionToStudy(Acc) {
-        PriorStudies := this.QueryPriorStudies(this.CurrentStudy.NHI)
+        PriorStudies := this.QueryPriorStudies(this.CurrentPatient().NHI)
         For Study in PriorStudies {
             If Study.Acc = Acc
                 return Study
@@ -441,7 +416,7 @@ class InteleviewerApp {
         ;; Find the Acc from InteleBrowser
         ;; If can't, use the log as fallback
         try {
-            PriorStudies := this.QueryPriorStudies(this.CurrentStudy.NHI)
+            PriorStudies := this.QueryPriorStudies(this.CurrentPatient().NHI)
             For Study in PriorStudies {
                 For _Uid in Study.Uids {
                     If Uid = _Uid
