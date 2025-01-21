@@ -37,8 +37,8 @@ startAll(*) {
 
 moveWindows(*) {
     try {
-        WinMove 0, 0, , , ComradApp.GenericWinTitle
-        WinMaximize ComradApp.GenericWinTitle
+        WinMove 0, 0, , , ComradApp.MainAppWinTitle
+        WinMaximize ComradApp.MainAppWinTitle
         WinMove 0, 1080, , , InteleviewerApp.SEARCH_WN
         WinMaximize InteleviewerApp.SEARCH_WN
         WinMove 650, 1100, 1260, 1000, PowerScribeApp.WinTitle
