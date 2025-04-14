@@ -5,6 +5,7 @@
 
 class Database {
 
+    static _host := "https://cogent-script-128909-default-rtdb.firebaseio.com/"
     static _DbFilename := "Database/AutoTriage.sqlite3"
     
     static __New() {
@@ -49,6 +50,25 @@ class Database {
     }
 
     RememberAlias(alias, canonical, modalityId) => this._db.Exec("INSERT INTO label (name, examination) VALUES ('" alias "', (SELECT id FROM examination WHERE name = '" canonical "' and modality = '" modalityId "'))")
+
+    static LiveDatabaseCall(path, body, method := "POST") {
+        bodyJson := jxon_dump(body, 0)
+        try {
+            whr := ComObject("WinHttp.WinHttpRequest.5.1")
+            whr.Open(method, this._host path ".json", true) ; async
+            whr.SetRequestHeader("Content-Type", "application/json")
+            whr.Send(bodyJson)
+            whr.WaitForResponse(3) ; timeout in 3 seconds
+            ; MsgBox whr.ResponseText
+        } catch Error as err {
+            ErrorLog(err.Message ", Request body: '" bodyJson "'")
+        }
+    }
+
+    static RememberAliasLive(user, alias, canonical, modalityId) => this.LiveDatabaseCall(
+        "alias",
+        Map("user",user,"alias",alias,"canonical",canonical,"modalityId",modalityId,"timestamp",Map(".sv","timestamp"))
+    )
 
     ForgetAliases(aliases) {
         query := "DELETE FROM label WHERE name IN ("

@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #Include Database.ahk
 #Include ../AutoTriage.ahk
+#Include ../../Lib/Comrad.ahk
 
 ErrorLog(msg) {
 	FileAppend A_Now ": " msg "`n", A_ScriptDir "\ErrorLog.txt"
@@ -64,18 +65,8 @@ class SelectStudyGui extends Gui {
 		if (result.count) {
 			FillOutExam(result[1,"body_part"], result[1,"code"])
 		}
-		if remember && RegExMatch(WinGetTitle("COMRAD Medical Systems Ltd. ahk_class SunAwtFrame"), "User:(\w+)", &match) { ; Send to Firebase
-			obj := Map("user",match[1],"alias",alias,"canonical",canonical,"timestamp",Map(".sv","timestamp"))
-			try {
-				whr := ComObject("WinHttp.WinHttpRequest.5.1")
-				whr.Open("POST", "https://cogent-script-128909-default-rtdb.firebaseio.com/alias.json", true) ; async
-				whr.SetRequestHeader("Content-Type", "application/json")
-				whr.Send(jxon_dump(obj, 0))
-				whr.WaitForResponse(3) ; timeout in 3 seconds
-				;~ MsgBox "Success!`nRequest body: `n" jxon_dump(obj, 2)
-			} catch Error as err {
-				ErrorLog(err.Message ", Request body: '" jxon_dump(obj, 0) "'")
-			}
+		if remember && ComradApp.getUser(&user) { ; Send to Firebase
+            Database.RememberAliasLive(user, alias, canonical, this.modalityId)
 		}
 	}
 

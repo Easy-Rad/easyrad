@@ -80,4 +80,11 @@ class ComradApp {
         ControlSend "{Space}", , this.SelectInterfaceWinTitle
         BlockInput 0
     }
+
+    static getUser(&user) {
+        r := RegExMatch(WinGetTitle("COMRAD Medical Systems Ltd. ahk_class SunAwtFrame"), "User:(\w+)", &match)
+        if (r) user := match[1]
+        return r
+    }
+
 }
