@@ -2,7 +2,7 @@
 
 class Config {
 
-    static _IniPath := A_MyDocuments
+    static _IniPath := A_MyDocuments ; hangs if network unavailable
     ; static _IniPath := A_AppData "\EasyRad"
     static _IniFilename := this._IniPath "\EasyRad.ini"
 

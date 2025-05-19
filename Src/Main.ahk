@@ -1,4 +1,4 @@
-;@Ahk2Exe-SetVersion 0.0.7
+;@Ahk2Exe-SetVersion 0.0.8
 ;@Ahk2Exe-SetMainIcon ..\Static\icon.ico
 #Requires AutoHotkey v2.0
 #SingleInstance Force
@@ -101,7 +101,7 @@ class MainGui extends Gui {
         this.AddText("w" fieldWidth " xs10 yp25 Right", "Default rank:")
         this.AddDropDownList("xp120 yp vDefaultTriageRank", ["Disabled", "1", "2", "3", "4", "5"])
         this["DefaultTriageRank"].Value := 1 + Integer(Config.AutoTriage["DefaultTriageRank"])
-        this.AddButton("xp yp25 w120", "Forget Aliases").OnEvent("Click", ForgetAliases)
+        ; this.AddButton("xp yp25 w120", "Forget Aliases").OnEvent("Click", ForgetAliases)
 
         this.Add("Button", "Default w100 xs40 Section", "Save").OnEvent("Click", "SettingsSaveBtn_Click")
         ;; Add a + button to add a group of controls

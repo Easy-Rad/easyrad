@@ -8,14 +8,14 @@
 
 SetTitleMatchMode 1
 
-MyForgetGui := ForgetGui()
+; MyForgetGui := ForgetGui()
 MySelectStudyGui := SelectStudyGui()
 
-^+f::
-ForgetAliases(*)
-{
-	MyForgetGui.Launch()
-}
+; ^+f::
+; ForgetAliases(*)
+; {
+; 	MyForgetGui.Launch()
+; }
 
 #HotIf WinActive("COMRAD Medical Systems Ltd. ahk_class SunAwtFrame")
 MButton::
@@ -110,9 +110,9 @@ Numpad5::
 
 	SendEvent "{Tab 2}" ; Tab to "Body Part"
 	if r.modality {
-		result := Database.GetExamMatch(r.modality, r.exam)
-		if (result) {
-			FillOutExam(result.bodyPart, result.code)
+		code := Database.GetExamMatch(r.modality, r.exam)
+		if (code) {
+			FillOutExam(Database.GetBodyPartForCode(r.modality, code), code)
 		} else if (Config.AutoTriage["UseStudySelector"]) {
 			MySelectStudyGui.Launch(r.modality, r.exam)
 		}

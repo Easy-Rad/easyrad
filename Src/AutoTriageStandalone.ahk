@@ -1,4 +1,4 @@
-;@Ahk2Exe-SetVersion 0.0.7
+;@Ahk2Exe-SetVersion 0.0.8
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 #Include Modules/AutoTriage.ahk
@@ -9,17 +9,17 @@ AutoTriageTrayMenu.AddToMenu(A_TrayMenu)
 A_TrayMenu.Add
 A_TrayMenu.AddStandard()
 
-^+f::
-{
-	MyForgetGui.Launch()
-}
+; ^+f::
+; {
+; 	MyForgetGui.Launch()
+; }
 
 class AutoTriageTrayMenu {
 
     static DefaultRankMenuName := "Default rank"
     static StudySelectorMenuName := "Use study selector"
     static TriageRankDisabledMenuName := "Disabled"
-    static ForgetAliasesMenuName := "Forget aliases"
+    ; static ForgetAliasesMenuName := "Forget aliases"
 
     static AddToMenu(parentMenu) {
         parentMenu.Add(this.DefaultRankMenuName, DefaultTriageRankMenu := Menu())
@@ -30,7 +30,7 @@ class AutoTriageTrayMenu {
         this.UpdateDefaultTriageRankMenu(Config.AutoTriage["DefaultTriageRank"] || this.TriageRankDisabledMenuName, DefaultTriageRankMenu)
         parentMenu.Add(this.StudySelectorMenuName, ToggleEnableStudySelector)
         this.SetChecked(parentMenu, this.StudySelectorMenuName, Config.AutoTriage["UseStudySelector"])
-        parentMenu.Add(this.ForgetAliasesMenuName, ForgetAliases)
+        ; parentMenu.Add(this.ForgetAliasesMenuName, ForgetAliases)
 
         DefaultTriageRankMenuCallback(MenuItemSelected, ItemPos, myMenu) {
             Config.AutoTriage["DefaultTriageRank"] := this.TriageRankDisabledMenuName == MenuItemSelected ? 0 : MenuItemSelected
