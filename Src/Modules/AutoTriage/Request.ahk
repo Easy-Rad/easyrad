@@ -11,14 +11,11 @@ class Request {
 			keyVal := StrSplit(A_LoopField, "=",,2)
 			switch keyVal[1] {
 				case "rf_exam_type":
-					switch keyVal[2] {
-						case "CT": this.modalityId := 1
-						case "MR": this.modalityId := 2
-						case "US": this.modalityId := 3
-						case "SC": this.modalityId := 4
-						default:
-							this.modalityId := 0
-							TrayTip 'Modality "' keyVal[2] '" not supported'
+					if (keyVal[2] == "CT" || keyVal[2] == "MR" || keyVal[2] == "US" || keyVal[2] == "SC") {
+						this.modality := keyVal[2]
+					} else {
+						this.modality := false
+						TrayTip 'Modality "' keyVal[2] '" not supported'
 					}
 				case "rf_reason":
 					this.exam := keyVal[2]
@@ -40,12 +37,12 @@ class Request {
             case !this.HasOwnProp("exam"):
                 TrayTip "Object missing 'rf_reason'"
                 Exit
-            case !this.HasOwnProp("modalityId"):
+            case !this.HasOwnProp("modality"):
                 TrayTip "Object missing 'rf_exam_type'"
                 Exit
         }
 	}
 
-	toString() => "ModalityId: " this.modalityId "`nExam requested: " this.exam "`nPriority: " this.priority
+	toString() => "ModalityId: " this.modality "`nExam requested: " this.exam "`nPriority: " this.priority
 
 }

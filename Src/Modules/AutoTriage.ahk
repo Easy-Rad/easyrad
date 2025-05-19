@@ -1,6 +1,5 @@
 #Requires AutoHotkey v2.0
 #Include ../Lib/Config.ahk
-#Include ../Lib/_JXON.ahk
 #Include AutoTriage/Gui.ahk
 #Include AutoTriage/Database.ahk
 #Include AutoTriage/Request.ahk
@@ -110,14 +109,12 @@ Numpad5::
 	}
 
 	SendEvent "{Tab 2}" ; Tab to "Body Part"
-	if r.modalityId {
-		db := Database(false)
-		result := db.GetExamMatch(r.modalityId, r.exam)
-		db.Close()
-		if (result.count) {
-			FillOutExam(result[1,"body_part"], result[1,"code"])
+	if r.modality {
+		result := Database.GetExamMatch(r.modality, r.exam)
+		if (result) {
+			FillOutExam(result.bodyPart, result.code)
 		} else if (Config.AutoTriage["UseStudySelector"]) {
-			MySelectStudyGui.Launch(r.modalityId, r.exam)
+			MySelectStudyGui.Launch(r.modality, r.exam)
 		}
 	}
 }

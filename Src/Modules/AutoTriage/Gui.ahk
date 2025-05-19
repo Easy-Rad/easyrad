@@ -32,41 +32,30 @@ class SelectStudyGui extends Gui {
         OnSearchChange(ctrlObj, *) {
             this.ListView.Opt("-Redraw")
             this.ListView.Delete()
-            db := Database(false)
-            for exam in db.GetExams(this.modalityId, ctrlObj.Value) {
+            for exam in Database.GetExams(this.modalityId, ctrlObj.Value) {
                 this.ListView.Add(,exam.code, exam.name)
             }
-            db.Close()
             this.ListView.Opt("+Redraw")
         }
         LV_DoubleClick(LV, RowNumber)
         {
-            if RowNumber ; do not trigger on header row
-                this.OnExamSelected(LV.GetText(RowNumber, 2))
+            if RowNumber { ; do not trigger on header row
+                ; this.OnExamSelected(LV.GetText(RowNumber, 2))
+            }
         }
         TV_DoubleClick(TV, ID)
         {
             if TV.GetParent(ID) { ; do not trigger on top level items
-                this.OnExamSelected(TV.GetText(ID))
+                ; this.OnExamSelected(TV.GetText(ID))
             }
         }
     }
 
-    OnExamSelected(canonical) {
+    OnExamSelected(bodyPart, code) {
         this.Hide()
-		remember := this.RememberChoice.Value
-		alias := this.RequestedStudy.Value
-		db := Database(remember) ; open in read/write mode depending on checkbox
-		if remember {
-			db.RememberAlias(alias, canonical, this.modalityId)
-		}
-		result := db.GetExamMatch(this.modalityId, canonical)
-		db.Close()
-		if (result.count) {
-			FillOutExam(result[1,"body_part"], result[1,"code"])
-		}
-		if remember && ComradApp.getUser(&user) { ; Send to Firebase
-            Database.RememberAliasLive(user, alias, canonical, this.modalityId)
+        FillOutExam(bodyPart, code)
+		if this.RememberChoice.Value && ComradApp.getUser(&user) { ; Send to Firebase
+            Database.RememberAlias(user, this.modalityId, this.RequestedStudy.Value, code)
 		}
 	}
 
@@ -76,9 +65,8 @@ class SelectStudyGui extends Gui {
         this.RememberChoice.Value := false
         this.FilterText.Value := ""
 		this.ListView.Delete()
-        db := Database(false)
         currentBodyPart := ""
-        for exam in db.GetExams(modalityId) {
+        for exam in Database.GetExams(modalityId) {
             this.ListView.Add(,exam.code, exam.name)
             if exam.body_part != currentBodyPart {
                 currentBodyPart := exam.body_part
@@ -86,7 +74,6 @@ class SelectStudyGui extends Gui {
             }
             this.TreeView.Add(exam.name, currentBodyPartBranchId)
         }
-        db.Close()
         this.Show()
         this.FilterText.Focus()
     }
@@ -115,19 +102,15 @@ class ForgetGui extends Gui {
             While RowNumber := this.ListView.GetNext(RowNumber) {  ; Resume the search at the row after that found by the previous iteration.
                 aliases.Push(this.ListView.GetText(RowNumber))
             }
-            db := Database(true)
-            db.ForgetAliases(aliases)
-            db.Close()
+            Database.ForgetAliases(aliases)
         }
     
         OnSearchChange(ctrlObj, *) {
             this.ListView.Opt("-Redraw")
             this.ListView.Delete()
-            db := Database(false)
-            for alias in db.GetAliases(ctrlObj.Value) {
+            for alias in Database.GetAliases(ctrlObj.Value) {
                 this.ListView.Add(, alias.name, alias.code, alias.canonical)
             }
-            db.Close()
             this.ListView.Opt("+Redraw")
             this.UpdateForgetButton(0)
         }    
@@ -143,11 +126,9 @@ class ForgetGui extends Gui {
         this.FilterText.Value := ""
         this.ListView.Opt("-Redraw")
         this.ListView.Delete()
-        db := Database(false)
-        for alias in db.GetAliases() {
+        for alias in Database.GetAliases() {
             this.ListView.Add(, alias.name, alias.code, alias.canonical)
         }
-        db.Close()
         this.ListView.ModifyCol()
         this.ListView.Opt("+Redraw")
         this.UpdateForgetButton(0)

@@ -5,3 +5,4 @@ AutoHotkey
 AutoHotkey_1
 Ahk2Exe.exe
 !Src/Lib/SQLite/lib/bin/
+ErrorLog.txt

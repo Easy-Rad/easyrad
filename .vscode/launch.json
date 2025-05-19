@@ -10,6 +10,13 @@
             "name": "Main.ahk",
             "program": "${workspaceFolder}/Src/Main.ahk",
             "stopOnEntry": false
+        },
+        {
+            "type": "autohotkey",
+            "request": "launch",
+            "name": "AutoTriageStandalone.ahk",
+            "program": "${workspaceFolder}/Src/AutoTriageStandalone.ahk",
+            "stopOnEntry": false
         }
     ]
 }
