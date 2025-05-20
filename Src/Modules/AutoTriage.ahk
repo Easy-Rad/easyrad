@@ -11,6 +11,8 @@ SetTitleMatchMode 1
 ; MyForgetGui := ForgetGui()
 MySelectStudyGui := SelectStudyGui()
 
+LaunchLogged := false
+
 ; ^+f::
 ; ForgetAliases(*)
 ; {
@@ -26,6 +28,11 @@ Numpad3::
 Numpad4::
 Numpad5::
 {
+	global LaunchLogged
+	if !LaunchLogged && ComradApp.getUser(&user) {
+		Database.LogLaunchEvent(user)
+		LaunchLogged := true
+	}
 	if ThisHotkey = "MButton" {
 		MouseGetPos ,,&win
 		if (win != WinGetID()) { ; cursor outside window

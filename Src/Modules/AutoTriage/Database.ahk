@@ -86,19 +86,24 @@ class Database {
         ; return {bodyPart: data["bodyPart"], code: data["code"]}
     
 
-    static WriteAsync(path, body, push := false) {
+    static Write(path, body, push := false, async := false) {
         bodyJson := jxon_dump(body, 0)
         try {
             whr := ComObject("WinHttp.WinHttpRequest.5.1")
-            whr.Open(push ? "POST" : "PUT", this._host path ".json", true) ; async
+            whr.Open(push ? "POST" : "PUT", this._host path ".json", async) ; sync
             whr.SetRequestHeader("Content-Type", "application/json")
             whr.Send(bodyJson)
-            whr.WaitForResponse(3) ; timeout in 3 seconds
+            if async {
+                whr.WaitForResponse(2) ; timeout in 2 seconds
+            }
             return whr.ResponseText
         } catch Error as err {
             ErrorLog(err.Message ", Request body: '" bodyJson "'")
         }
     }
+
+
+    static LogLaunchEvent(user) => this.Write("log/launch", Map("user", user, "timestamp", this._timestamp), true, false)
 
     static LogTriageEvent(user, modality, request, code, found) {
         body := Map(
@@ -111,15 +116,7 @@ class Database {
         if !found {
             body["tokenised"] := this.Tokenise(request)
         }
-        try {
-            whr := ComObject("WinHttp.WinHttpRequest.5.1")
-            whr.Open("POST", this._host "log/triage.json", false) ; sync
-            whr.SetRequestHeader("Content-Type", "application/json")
-            whr.Send(jxon_dump(body, 0))
-            return whr.ResponseText
-        } catch Error as err {
-            ErrorLog(err.Message ", Request body: '" jxon_dump(body, 0) "'")
-        }
+        return this.Write("log/triage", body, true)
     }
 
     ; static ReadSync(path) {
