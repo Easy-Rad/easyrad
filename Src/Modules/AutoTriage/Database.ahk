@@ -1,10 +1,15 @@
 #Requires AutoHotkey v2.0
 #Include ../../Lib/_JXON.ahk
 
+
+ErrorLog(msg) {
+	FileAppend A_Now ": " msg "`n", A_ScriptDir "\ErrorLog.txt"
+}
+
 class Database {
 
-    ; static _host := "https://cogent-script-128909-default-rtdb.firebaseio.com/"
-    ; static _timestamp := Map(".sv", "timestamp")
+    static _host := "https://cogent-script-128909-default-rtdb.firebaseio.com/"
+    static _timestamp := Map(".sv", "timestamp")
     static _LabelsFilename := "Database/labels.json"
     static _ExamsFilename := "Database/exams.json"
     
@@ -65,7 +70,7 @@ class Database {
     ; }
 
     static Tokenise(s) {
-        static pattern := 'i)([^\w+-]|(?<!\bC)[+-]|\b(and|or|with|by|left|right|please|GP|CT|MRI?|US|ultrasound|scan|study|contrast)\b)'
+        static pattern := 'i)([^\w+-]|(?<!\bC)[+-]|\b(and|or|with|by|left|right|please|GP|CT|MRI?|US|ultrasound|scan|study|protocol|contrast)\b)'
         s := RegExReplace(StrLower(s), pattern, " ") ; Remove unwanted chars/words (case-insensitive)
         s := RegExReplace(Trim(s), "\s+", " ") ; Replace multiple spaces with a single space
         return Sort(s, "D U") ; Sort the string in ascending order with space as delimiter, removing duplicates
@@ -85,13 +90,35 @@ class Database {
         bodyJson := jxon_dump(body, 0)
         try {
             whr := ComObject("WinHttp.WinHttpRequest.5.1")
-            whr.Open(push ? "POST" : "PUT", Database._host path ".json", true) ; async
+            whr.Open(push ? "POST" : "PUT", this._host path ".json", true) ; async
             whr.SetRequestHeader("Content-Type", "application/json")
             whr.Send(bodyJson)
             whr.WaitForResponse(3) ; timeout in 3 seconds
             return whr.ResponseText
         } catch Error as err {
             ErrorLog(err.Message ", Request body: '" bodyJson "'")
+        }
+    }
+
+    static LogTriageEvent(user, modality, request, code, found) {
+        body := Map(
+            "user", user,
+            "modality", modality,
+            "request", request,
+            "code", code,
+            "timestamp", this._timestamp,
+            )
+        if !found {
+            body["tokenised"] := this.Tokenise(request)
+        }
+        try {
+            whr := ComObject("WinHttp.WinHttpRequest.5.1")
+            whr.Open("POST", this._host "log/triage.json", false) ; sync
+            whr.SetRequestHeader("Content-Type", "application/json")
+            whr.Send(jxon_dump(body, 0))
+            return whr.ResponseText
+        } catch Error as err {
+            ErrorLog(err.Message ", Request body: '" jxon_dump(body, 0) "'")
         }
     }
 
@@ -109,7 +136,7 @@ class Database {
     ; RememberAlias(alias, canonical, modalityId) => this._db.Exec("INSERT INTO label (name, examination) VALUES ('" alias "', (SELECT id FROM examination WHERE name = '" canonical "' and modality = '" modalityId "'))")
     static RememberAlias(user, modality, alias, code) => this.WriteAsync(
         "alias",
-        Map("user",user,"modality",modality,"label",this.Tokenise(alias),"code",code,"timestamp",Database._timestamp),
+        Map("user",user,"modality",modality,"label",this.Tokenise(alias),"code",code,"timestamp",this._timestamp),
         true
     )
 

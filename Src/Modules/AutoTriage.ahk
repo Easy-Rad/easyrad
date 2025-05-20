@@ -112,14 +112,15 @@ Numpad5::
 	if r.modality {
 		code := Database.GetExamMatch(r.modality, r.exam)
 		if (code) {
-			FillOutExam(Database.GetBodyPartForCode(r.modality, code), code)
+			FillOutExam(r.modality, r.exam, code, true)
 		} else if (Config.AutoTriage["UseStudySelector"]) {
 			MySelectStudyGui.Launch(r.modality, r.exam)
 		}
 	}
 }
 
-FillOutExam(bodyPart, code) { 	; Fill out "Body Part" and "Code"
+FillOutExam(modality, request, code, found) { 	; Fill out "Body Part" and "Code"
+	bodyPart := Database.GetBodyPartForCode(modality, code)
 	switch bodyPart {
 		case "CHEST/ABDO": SendEvent "{Home}CC"
 		case "CHEST": SendEvent "{Home}C"
@@ -132,6 +133,10 @@ FillOutExam(bodyPart, code) { 	; Fill out "Body Part" and "Code"
 	}
 	SendEvent "{Tab 7}" ;  Tab to table (need 7 rather than 6 if CONT_SENST is showing)
 	SendEvent "{Home}{Tab}" code "{Tab}" ; Navigate to "Code" cell, enter code, tab out of cell
+	if ComradApp.getUser(&user) { ; Send to Firebase
+		Database.LogTriageEvent(user, modality, request, code, found)
+	}
+
 }
 
 RButton::

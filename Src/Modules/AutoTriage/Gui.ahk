@@ -3,10 +3,6 @@
 #Include ../AutoTriage.ahk
 #Include ../../Lib/Comrad.ahk
 
-ErrorLog(msg) {
-	FileAppend A_Now ": " msg "`n", A_ScriptDir "\ErrorLog.txt"
-}
-
 class SelectStudyGui extends Gui {
 
     __New(){
@@ -53,10 +49,7 @@ class SelectStudyGui extends Gui {
 
     OnExamSelected(code) {
         this.Hide()
-        FillOutExam(Database.GetBodyPartForCode(this.modality, code), code)
-		; if this.RememberChoice.Value && ComradApp.getUser(&user) { ; Send to Firebase
-        ;     Database.RememberAlias(user, this.modality, this.RequestedStudy.Value, code)
-		; }
+        FillOutExam(this.modality, this.RequestedStudy.Value, code, false)
 	}
 
     Launch(modality, examRequested){
