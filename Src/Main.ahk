@@ -1,7 +1,7 @@
-;@Ahk2Exe-SetVersion 0.0.10
-;@Ahk2Exe-SetMainIcon ..\Static\icon.ico
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+;@Ahk2Exe-SetMainIcon ..\Static\icon.ico
+#Include Version.ahk
 #Include Common.ahk
 #Include Modules\Emacs.ahk
 #Include Modules\Keyboard.ahk

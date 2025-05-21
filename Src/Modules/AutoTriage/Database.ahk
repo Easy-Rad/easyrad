@@ -90,20 +90,24 @@ class Database {
         bodyJson := jxon_dump(body, 0)
         try {
             whr := ComObject("WinHttp.WinHttpRequest.5.1")
-            whr.Open(push ? "POST" : "PUT", this._host path ".json", async) ; sync
+            whr.Open(push ? "POST" : "PUT", this._host path ".json", async)
             whr.SetRequestHeader("Content-Type", "application/json")
             whr.Send(bodyJson)
-            if async {
-                whr.WaitForResponse(2) ; timeout in 2 seconds
-            }
-            return whr.ResponseText
+            return whr
+            ; if async {
+            ;     whr.WaitForResponse(2) ; timeout in 2 seconds
+            ; }
+            ; return whr.ResponseText
         } catch Error as err {
             ErrorLog(err.Message ", Request body: '" bodyJson "'")
         }
     }
 
-
-    static LogLaunchEvent(user) => this.Write("log/launch", Map("user", user, "timestamp", this._timestamp), true, false)
+    static LogLaunchEvent(user) => this.Write("log/launch", Map(
+            "user", user,
+            "version", CodeVersion,
+            "timestamp", this._timestamp,
+        ), true)
 
     static LogTriageEvent(user, modality, request, code, found) {
         body := Map(
@@ -131,21 +135,21 @@ class Database {
     ; }
 
     ; RememberAlias(alias, canonical, modalityId) => this._db.Exec("INSERT INTO label (name, examination) VALUES ('" alias "', (SELECT id FROM examination WHERE name = '" canonical "' and modality = '" modalityId "'))")
-    static RememberAlias(user, modality, alias, code) => this.WriteAsync(
-        "alias",
-        Map("user",user,"modality",modality,"label",this.Tokenise(alias),"code",code,"timestamp",this._timestamp),
-        true
-    )
+    ; static RememberAlias(user, modality, alias, code) => this.Write(
+    ;     "alias",
+    ;     Map("user",user,"modality",modality,"label",this.Tokenise(alias),"code",code,"timestamp",this._timestamp),
+    ;     true
+    ; )
 
-    static ForgetAliases(aliases) {
-        query := "DELETE FROM label WHERE name IN ("
-        for alias in aliases {
-            if A_Index > 1
-				query .= ","
-            query .= "'" alias "'"
-        }
-        query .= ")"
-        ; this._db.Exec(query)
-    }
+    ; static ForgetAliases(aliases) {
+    ;     query := "DELETE FROM label WHERE name IN ("
+    ;     for alias in aliases {
+    ;         if A_Index > 1
+	; 			query .= ","
+    ;         query .= "'" alias "'"
+    ;     }
+    ;     query .= ")"
+    ;     ; this._db.Exec(query)
+    ; }
 
 }

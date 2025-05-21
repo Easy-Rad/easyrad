@@ -28,11 +28,6 @@ Numpad3::
 Numpad4::
 Numpad5::
 {
-	global LaunchLogged
-	if !LaunchLogged && ComradApp.getUser(&user) {
-		Database.LogLaunchEvent(user)
-		LaunchLogged := true
-	}
 	if ThisHotkey = "MButton" {
 		MouseGetPos ,,&win
 		if (win != WinGetID()) { ; cursor outside window
@@ -141,6 +136,11 @@ FillOutExam(modality, request, code, found) { 	; Fill out "Body Part" and "Code"
 	SendEvent "{Tab 7}" ;  Tab to table (need 7 rather than 6 if CONT_SENST is showing)
 	SendEvent "{Home}{Tab}" code "{Tab}" ; Navigate to "Code" cell, enter code, tab out of cell
 	if ComradApp.getUser(&user) { ; Send to Firebase
+		global LaunchLogged
+		if !LaunchLogged {
+			Database.LogLaunchEvent(user)
+			LaunchLogged := true
+		}
 		Database.LogTriageEvent(user, modality, request, code, found)
 	}
 

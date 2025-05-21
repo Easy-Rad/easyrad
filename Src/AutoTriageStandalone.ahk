@@ -1,6 +1,6 @@
-;@Ahk2Exe-SetVersion 0.0.10
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#Include Version.ahk
 #Include Modules/AutoTriage.ahk
 #Include Lib/Config.ahk
 
