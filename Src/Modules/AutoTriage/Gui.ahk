@@ -6,24 +6,20 @@
 class SelectStudyGui extends Gui {
 
     __New(){
+        this.user := false
         this.modality := false
         super.__New(,"Select study to protocol")
         this.AddText("Section w100", "Requested study:")
         this.RequestedStudy := this.AddEdit("ys w300")
         this.RequestedStudy.Opt("ReadOnly")
 
-        ; this.RememberChoice := this.AddCheckBox("xs", "Remember alias")
+        this.RememberChoice := this.AddCheckBox("xs", "Remember choice")
 
-        ; Tabs := this.AddTab3("Section xs", ["Search", "Choose"])
-        ; Tabs.UseTab(1)
         this.AddText("Section xs w100", "Filter:")
         this.FilterText := this.AddEdit("ys w300")
         this.ListView := this.AddListView("xs w500 r20", ["Code", "Description"])
-        ; Tabs.UseTab(2)
-        ; this.TreeView := this.AddTreeView("w500 r24")
         this.ListView.OnEvent("DoubleClick", LV_DoubleClick)
         this.FilterText.OnEvent("Change", OnSearchChange)
-        ; this.TreeView.OnEvent("DoubleClick", TV_DoubleClick)
 
         OnSearchChange(ctrlObj, *) {
             this.ListView.Opt("-Redraw")
@@ -39,33 +35,43 @@ class SelectStudyGui extends Gui {
                 this.OnExamSelected(LV.GetText(RowNumber))
             }
         }
-        ; TV_DoubleClick(TV, ID)
-        ; {
-        ;     if TV.GetParent(ID) { ; do not trigger on top level items
-        ;         this.OnExamSelected(TV.GetText(ID))
-        ;     }
-        ; }
     }
 
     OnExamSelected(code) {
         this.Hide()
-        FillOutExam(this.modality, this.RequestedStudy.Value, code, false)
+        if this.RememberChoice.Value {
+            whr := Database.Post("autotriage/remember", Map(
+                    "user", this.user,
+                    "exam", this.RequestedStudy.Value,
+                    "modality", this.modality,
+                    "code", code,
+                ), true)
+        }
+        FillOutExam(Database.GetBodyPartForCode(this.modality, code), code)
+        if (this.RememberChoice.Value) {
+            try {
+                whr.WaitForResponse()
+            } catch Error as e {
+		        TrayTip("No response, unable to save choice", "Network autotriage unresponsive", 0x13)
+            } else if whr.Status == 400 {
+                result := whr.ResponseText
+                data := Jxon_Load(&result)
+                TrayTip(data["error"],"Autotriage error", 0x3)
+            } else if whr.Status != 204 {
+                TrayTip("Unable to save choice", "Network autotriage server error", 0x3)
+            }
+        }
 	}
 
-    Launch(modality, examRequested){
+    Launch(user, modality, examRequested){
+        this.user := user
         this.modality := modality
         this.RequestedStudy.Value := examRequested
-        ; this.RememberChoice.Value := false
+        this.RememberChoice.Value := false
         this.FilterText.Value := ""
 		this.ListView.Delete()
-        ; currentBodyPart := ""
         for code, data in Database.GetExams(modality) {
             this.ListView.Add(,code, data[2])
-            ; if data[1] != currentBodyPart {
-            ;     currentBodyPart := data[1]
-            ;     currentBodyPartBranchId := this.TreeView.Add(currentBodyPart)
-            ; }
-            ; this.TreeView.Add(data[2], currentBodyPartBranchId)
         }
         this.Show()
         this.FilterText.Focus()

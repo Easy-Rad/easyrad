@@ -28,6 +28,8 @@ class Request {
 					this.exam := RegExReplace(this.exam, "\s+", " ")
 				case "rf_original_priority":
 					this.priority := keyVal[2]
+				case "rf_serial":
+					this.serial := keyVal[2]
 			}
 		}
         switch {
@@ -40,9 +42,12 @@ class Request {
             case !this.HasOwnProp("modality"):
                 TrayTip "Object missing 'rf_exam_type'"
                 Exit
+            case !this.HasOwnProp("serial"):
+                TrayTip "Object missing 'rf_serial'"
+                Exit
         }
 	}
 
-	toString() => "ModalityId: " this.modality "`nExam requested: " this.exam "`nPriority: " this.priority
+	toString() => "Serial: " this.serial "`nModalityId: " this.modality "`nExam requested: " this.exam "`nPriority: " this.priority
 
 }

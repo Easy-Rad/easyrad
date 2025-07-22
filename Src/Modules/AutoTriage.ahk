@@ -3,15 +3,14 @@
 #Include AutoTriage/Gui.ahk
 #Include AutoTriage/Database.ahk
 #Include AutoTriage/Request.ahk
+#Include AutoTriage/Response.ahk
 #Include ../Common.ahk
-; #Include AutoTriage/AutoTriageConfig.ahk
+#Include ../Lib/_JXON.ahk
 
 SetTitleMatchMode 1
 
 ; MyForgetGui := ForgetGui()
 MySelectStudyGui := SelectStudyGui()
-
-LaunchLogged := false
 
 ; ^+f::
 ; ForgetAliases(*)
@@ -27,37 +26,26 @@ Numpad2::
 Numpad3::
 Numpad4::
 Numpad5::
+^MButton::
+^Numpad0::
+^Numpad1::
+^Numpad2::
+^Numpad3::
+^Numpad4::
+^Numpad5::
 {
-	if ThisHotkey = "MButton" {
+	if ThisHotkey = "MButton" or ThisHotkey = "^MButton" {
 		MouseGetPos ,,&win
 		if (win != WinGetID()) { ; cursor outside window
 			Click "M"
 			Exit
 		}
 	}
+	if !ComradApp.getUser(&user) {
+		TrayTip("No user found",,0x13)
+		Exit
+	}
 	SendEvent "!c" ; Close any AMR popup with Alt+C
-	; Click on the left panel
-	; DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-	; DllCall("Shcore.dll\GetDpiForMonitor", "ptr", DllCall("MonitorFromWindow", "ptr", WinGetID(), "int", 2, "ptr"), "int", 0, "uint*", &dpiX := 0, "uint*", &dpiY := 0)
-	; ClickLocation := {x: 16, y: 114}
-	; Click ClickLocation.x*dpiX//A_ScreenDPI, ClickLocation.y*dpiY//A_ScreenDPI
-	; MouseMove x, y ; restore mouse position
-
-	; OR
-
-	; https://www.ibm.com/docs/en/sdk-java-technology/8?topic=applications-default-swing-key-bindings
-	; Automatically moves focus if on triage
-	; F8 Move to splitter bar
-	; F6 Move between panes (need to do this twice to get out of the pdf viewer)
-	;~ SendEvent "^{Up}{F8}{F6}{Tab}" ; Move from page to tab (escapes from pdf)
-	; OR
-	; SendEvent "{F6}{F8}{F6}{Tab}"
-	; OR
-	; if (ThisHotkey = "MButton") {
-	; 	SendEvent "{Click}" ; Relies on the mouse position being over the middle pane or the pdf viewer to return focus to it and avoid a problem where the chat window is launched if the focus is higher than the main panes in the hierarchy, e.g. if Autonext has just been toggled and focus has not been returned to the panes
-	; }
-
-	
 	SendEvent "{F6}{Tab}" ; Focus on tree
 	RestoreClipboard := A_Clipboard
 	A_Clipboard := ""
@@ -65,13 +53,21 @@ Numpad5::
 	if !ClipWait(0.1) { ; maybe the focus was orignally on the pdf viewer, try again
 		SendEvent "{F6}{Tab}^c"
 		if !ClipWait(0.1) {
-			TrayTip "No request found"
+			TrayTip("No request found",,0x13)
 			A_Clipboard := RestoreClipboard
 			Exit
 		}
 	}
 	r := Request(A_Clipboard)
 	A_Clipboard := RestoreClipboard
+
+	if r.serial {
+		whr := Database.Post("autotriage", Map(
+				"user", user,
+				"version", CodeVersion,
+				"referral", r.serial,
+			), true)
+	}
 
 	SendEvent "{Tab}" ; Tab to "Radiology Category"
 	switch {
@@ -97,12 +93,12 @@ Numpad5::
 	
 	SendEvent "{Tab 7}" ; Tab to "Rank"
 	switch ThisHotkey {
-		case "Numpad0": TriageRank := 0 ; skips rank entry
-		case "Numpad1": TriageRank := 1
-		case "Numpad2": TriageRank := 2
-		case "Numpad3": TriageRank := 3
-		case "Numpad4": TriageRank := 4
-		case "Numpad5": TriageRank := 5
+		case "Numpad0", "^Numpad0": TriageRank := 0 ; skips rank entry
+		case "Numpad1", "^Numpad1": TriageRank := 1
+		case "Numpad2", "^Numpad2": TriageRank := 2
+		case "Numpad3", "^Numpad3": TriageRank := 3
+		case "Numpad4", "^Numpad4": TriageRank := 4
+		case "Numpad5", "^Numpad5": TriageRank := 5
 		default: TriageRank := Integer(Config.AutoTriage["DefaultTriageRank"]) ; 0 if disabled
 	}
 	if TriageRank {
@@ -111,18 +107,36 @@ Numpad5::
 	}
 
 	SendEvent "{Tab 2}" ; Tab to "Body Part"
-	if r.modality {
-		code := Database.GetExamMatch(r.modality, r.exam)
-		if (code) {
-			FillOutExam(r.modality, r.exam, code, true)
-		} else if (Config.AutoTriage["UseStudySelector"]) {
-			MySelectStudyGui.Launch(r.modality, r.exam)
+	manualStudySelect := SubStr(ThisHotkey, 1, 1) == "^"
+	try {
+		whr.WaitForResponse()
+		result := whr.ResponseText
+		data := Jxon_Load(&result)
+	} catch Error as e {
+		TrayTip("Falling back to local", "Network autotriage failed", 0x13)
+		if !manualStudySelect {
+			code := Database.GetExamMatch(r.modality, r.exam)
+			if code {
+				FillOutExam(Database.GetBodyPartForCode(r.modality, code), code)
+				Exit
+			}
+		}
+		if manualStudySelect || Config.AutoTriage["UseStudySelector"] {
+			MySelectStudyGui.Launch(user, r.modality, r.exam)
+		}
+	} else if data.Has("error") {
+		TrayTip(data["error"],"Autotriage error", 0x13)
+	} else {
+		r := Response(data)
+		if r.result && !manualStudySelect {
+			FillOutExam(r.result.body_part, r.result.code)
+		} else if manualStudySelect || Config.AutoTriage["UseStudySelector"] {
+			MySelectStudyGui.Launch(user, r.request.modality, r.request.exam)
 		}
 	}
 }
 
-FillOutExam(modality, request, code, found) { 	; Fill out "Body Part" and "Code"
-	bodyPart := Database.GetBodyPartForCode(modality, code)
+FillOutExam(bodyPart, code) { 	; Fill out "Body Part" and "Code"
 	switch bodyPart {
 		case "CHEST/ABDO": SendEvent "{Home}CC"
 		case "CHEST": SendEvent "{Home}C"
@@ -135,15 +149,6 @@ FillOutExam(modality, request, code, found) { 	; Fill out "Body Part" and "Code"
 	}
 	SendEvent "{Tab 7}" ;  Tab to table (need 7 rather than 6 if CONT_SENST is showing)
 	SendEvent "{Home}{Tab}" code "{Tab}" ; Navigate to "Code" cell, enter code, tab out of cell
-	if ComradApp.getUser(&user) { ; Send to Firebase
-		global LaunchLogged
-		if !LaunchLogged {
-			Database.LogLaunchEvent(user)
-			LaunchLogged := true
-		}
-		Database.LogTriageEvent(user, modality, request, code, found)
-	}
-
 }
 
 RButton::
