@@ -117,7 +117,7 @@ Numpad5::
 		if !manualStudySelect {
 			code := Database.GetExamMatch(r.modality, r.exam)
 			if code {
-				FillOutExam(Database.GetBodyPartForCode(r.modality, code), code)
+				FillOutExam(Database.GetBodyPartForCode(r.modality, code), code, Array())
 				Exit
 			}
 		}
@@ -129,14 +129,14 @@ Numpad5::
 	} else {
 		r := Response(data)
 		if r.result && !manualStudySelect {
-			FillOutExam(r.result.body_part, r.result.code)
+			FillOutExam(r.result.body_part, r.result.code, Array())
 		} else if manualStudySelect || Config.AutoTriage["UseStudySelector"] {
 			MySelectStudyGui.Launch(user, r.request.modality, r.request.exam)
 		}
 	}
 }
 
-FillOutExam(bodyPart, code) { 	; Fill out "Body Part" and "Code"
+FillOutExam(bodyPart, code, extraCodes) { 	; Fill out "Body Part" and "Code"
 	switch bodyPart {
 		case "CHEST/ABDO": SendEvent "{Home}CC"
 		case "CHEST": SendEvent "{Home}C"
@@ -149,6 +149,9 @@ FillOutExam(bodyPart, code) { 	; Fill out "Body Part" and "Code"
 	}
 	SendEvent "{Tab 7}" ;  Tab to table (need 7 rather than 6 if CONT_SENST is showing)
 	SendEvent "{Home}{Tab}" code "{Tab}" ; Navigate to "Code" cell, enter code, tab out of cell
+	For extraCode in extraCodes {
+		SendEvent "!a{Tab}" extraCode "{Tab}"
+	}
 }
 
 RButton::

@@ -47,7 +47,7 @@ class SelectStudyGui extends Gui {
                     "code", code,
                 ), true)
         }
-        FillOutExam(Database.GetBodyPartForCode(this.modality, code), code)
+        FillOutExam(Database.GetBodyPartForCode(this.modality, code), code, Array())
         if (this.RememberChoice.Value) {
             try {
                 whr.WaitForResponse()
