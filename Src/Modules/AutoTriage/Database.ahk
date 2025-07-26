@@ -65,24 +65,4 @@ class Database {
         return whr
     }
 
-    static LogLaunchEvent(user) => this.Write("log/launch", Map(
-            "user", user,
-            "version", CodeVersion,
-            "timestamp", this._timestamp,
-        ), true)
-
-    static LogTriageEvent(user, modality, request, code, found) {
-        body := Map(
-            "user", user,
-            "modality", modality,
-            "request", request,
-            "code", code,
-            "timestamp", this._timestamp,
-            )
-        if !found {
-            body["tokenised"] := this.Tokenise(request)
-        }
-        return this.Write("log/triage", body, true)
-    }
-
 }

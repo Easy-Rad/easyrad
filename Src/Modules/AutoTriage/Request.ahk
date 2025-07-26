@@ -16,6 +16,7 @@ class Request {
 					} else {
 						this.modality := false
 						TrayTip 'Modality "' keyVal[2] '" not supported'
+						Exit
 					}
 				case "rf_reason":
 					this.exam := keyVal[2]
