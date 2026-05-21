@@ -44,6 +44,7 @@ class ComradApp {
             return
         } Else If WinExist(this.SelectInterfaceWinTitle) {
             this._select_interface(interface)
+            WinWait(this.MainAppWinTitle)
             this._send_cred(username, password)
             return
         } Else {
@@ -51,13 +52,13 @@ class ComradApp {
             WinWait "Wget"
             WinWaitClose "Wget"
             PrevMatchMode := SetTitleMatchMode("RegEx")
-            If WinWait("(" this.SelectInterfaceWinTitle ")|(" this.MainAppWinTitle ")", , 10)
+            If WinWait("(" this.SelectInterfaceWinTitle ")|(" this.MainAppWinTitle ")", , 10) {
                 If WinExist(this.SelectInterfaceWinTitle) {
                     this._select_interface(interface)
-                    If WinWait(this.MainAppWinTitle)
-                        this._send_cred(username, password)
+                    WinWait(this.MainAppWinTitle)
                 }
-            this._send_cred(username, password)
+                this._send_cred(username, password)
+            }
             SetTitleMatchMode(PrevMatchMode)
             return
         }

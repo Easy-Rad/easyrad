@@ -4,7 +4,7 @@ class InteleviewerApp {
     static WinTitle_Viewer := ".* InteleViewer.* ahk_exe InteleViewer.exe"
     static WinTitle_Viewer_Exclude := "^(Search.*)|(Chat.*)"
     static WinTitle_Search := "Search Tool"
-    static WinTitle_Login := "INTELEPACS - InteleViewer Login"
+    static WinTitle_Login := "IntelePACS - InteleViewer Login"
     static RE_Dragged_Uid := "Drag started for thumbnail dataset PersistentImageId \[mSeriesInstanceUid=(?P<Uid>[0-9.]+),"
     static RE_Protocol_Match_Acc := "Loading matched prior study: Study \[[A-Za-z0-9-]+ Acc (?P<ACC>" RE_ACC ")"
     static RE_ACC_PID := "Acc\[(?P<ACC>[A-Z0-9-_]+)\] Pid\[(?P<NHI>[A-Z0-9-_]+)\]"
@@ -437,13 +437,13 @@ class InteleviewerApp {
             TransientTrayTip "Inteleviewer is already running"
             return
         }
-        Else If WinExist("INTELEPACS - InteleViewer Login") {
+        Else If WinExist(this.WinTitle_Login) {
             this._send_cred(username, password)
             return
         }
         Else {
             Run "C:\Program Files\Intelerad Medical Systems\InteleViewer\CViewer\StartInteleViewer.exe"
-            WinWait "INTELEPACS - InteleViewer Login"
+            WinWait this.WinTitle_Login
             this._send_cred(username, password)
             return
         }
@@ -454,15 +454,14 @@ class InteleviewerApp {
         ;; Previously tried to use ControlSend, but it was unreliable
         BlockInput 1
         WinActivate this.WinTitle_Login
+        try dac := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
         Click 500, 330 ;; Select first server
         Click 500, 360 ;; Select username
-        Sleep 100
+        IsSet(dac) && DllCall("SetThreadDpiAwarenessContext", "ptr", dac, "ptr")
         Send "^a"       ;; Clear saved username
         SendText username    ;; Type in username
         Send "{Tab}"
-        Sleep 250
         SendText password  ;; Password
-        Sleep 250
         Send "{Enter}"
         BlockInput 0
     }

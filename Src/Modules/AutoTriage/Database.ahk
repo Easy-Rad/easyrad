@@ -2,31 +2,28 @@
 #Include ../../Lib/_JXON.ahk
 
 
-ErrorLog(msg) {
-	FileAppend A_Now ": " msg "`n", A_ScriptDir "\ErrorLog.txt"
-}
-
 class Database {
 
     static _host := "https://api.easyrad.duckdns.org/"
-    static _timestamp := Map(".sv", "timestamp")
-    static _LabelsFilename := "Database/labels.json"
-    static _ExamsFilename := "Database/exams.json"
     
     static __New() {
-        if !FileExist(this._ExamsFilename) || !FileExist(this._LabelsFilename) {
-            if (A_IsCompiled) {
-                DirCreate "Database"
-                FileInstall "Database/exams.json", this._ExamsFilename
-                FileInstall "Database/labels.json", this._LabelsFilename
+        whr := ComObject("WinHttp.WinHttpRequest.5.1")
+        whr.Open("GET", this._host "autotriage/config", true)
+        whr.Send()
+        if whr.WaitForResponse(2) {
+            if (whr.Status == 200) {
+                result := whr.ResponseText
+                data := Jxon_Load(&result)
+                this.exams := data["exams"]
+                this.labels := data["labels"]
+                return
             } else {
-                throw Error("Database files not found:", , this._ExamsFilename "," this._LabelsFilename)
+                MsgBox("Failed to fetch configuration from server (status code " . whr.Status . ")`n`Exiting AutoTriage", "AutoTriage server error", 0x10)
             }
+        } else {
+            MsgBox("No response from server`n`Exiting AutoTriage", "AutoTriage server error", 0x10)
         }
-        _j := FileRead(this._ExamsFilename)
-        this.exams := Jxon_Load(&_j)
-        _j := FileRead(this._LabelsFilename)
-        this.labels := Jxon_Load(&_j)
+        ExitApp
     }
 
     static GetExams(modality, searchStr := "") {
