@@ -5,7 +5,7 @@ F1:: opener.OpenHighlightedText()
 
 
 ;; ===== Comrad =====
-#HotIf WinActive("COMRAD")
+#HotIf WinActive("Comrad Medical Systems Ltd ahk_class SunAwtFrame")
 
 F2:: ConcertoWeb.OpenHighlightedPatientProfile()
 

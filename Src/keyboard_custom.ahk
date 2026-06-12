@@ -193,7 +193,7 @@ k:: ControlSend "{Up}", GetEditorFormClassNN("RichEdit20W")
 
 
 ;; ===== COMRAD =====
-#HotIf WinActive("COMRAD")
+#HotIf WinActive("Comrad Medical Systems Ltd")
 
 ^s::!s
 

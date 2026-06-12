@@ -9,16 +9,9 @@
 
 SetTitleMatchMode 1
 
-; MyForgetGui := ForgetGui()
 MySelectStudyGui := SelectStudyGui()
 
-; ^+f::
-; ForgetAliases(*)
-; {
-; 	MyForgetGui.Launch()
-; }
-
-#HotIf WinActive("COMRAD Medical Systems Ltd. ahk_class SunAwtFrame")
+#HotIf WinActive("Comrad Medical Systems Ltd ahk_class SunAwtFrame")
 MButton::
 Numpad0::
 Numpad1::
@@ -35,14 +28,14 @@ Numpad5::
 ^Numpad5::
 {
 	if ThisHotkey = "MButton" or ThisHotkey = "^MButton" {
-		MouseGetPos ,,&win
+		MouseGetPos , , &win
 		if (win != WinGetID()) { ; cursor outside window
 			Click "M"
 			Exit
 		}
 	}
 	if !ComradApp.getUser(&user) {
-		TrayTip("No user found",,0x13)
+		TrayTip("No user found", , 0x13)
 		Exit
 	}
 	SendEvent "!c" ; Close any AMR popup with Alt+C
@@ -53,7 +46,7 @@ Numpad5::
 	if !ClipWait(0.1) { ; maybe the focus was orignally on the pdf viewer, try again
 		SendEvent "{F6}{Tab}^c"
 		if !ClipWait(0.1) {
-			TrayTip("No request found",,0x13)
+			TrayTip("No request found", , 0x13)
 			A_Clipboard := RestoreClipboard
 			Exit
 		}
@@ -63,16 +56,16 @@ Numpad5::
 
 	if r.serial {
 		whr := Database.Post("autotriage", Map(
-				"user", user,
-				"version", CodeVersion,
-				"referral", r.serial,
-			), true)
+			"user", user,
+			"version", CodeVersion,
+			"referral", r.serial,
+		), true)
 	}
 
 	SendEvent "{Tab}" ; Tab to "Radiology Category"
 	switch {
 		case r.priority == "null": ; No "Clinical category" copied
-			TrayTip "No clinical category",,2
+			TrayTip "No clinical category", , 2
 		case InStr(r.priority, "Immediate", 0): ; STAT
 			SendEvent "{Home}S"
 		case InStr(r.priority, "24 hours", 0): ; 24 hours
@@ -90,7 +83,7 @@ Numpad5::
 		default: ; Planned
 			SendEvent "{Home}P"
 	}
-	
+
 	SendEvent "{Tab 7}" ; Tab to "Rank"
 	switch ThisHotkey {
 		case "Numpad0", "^Numpad0": TriageRank := 0 ; skips rank entry
@@ -125,7 +118,7 @@ Numpad5::
 			MySelectStudyGui.Launch(user, r.modality, r.exam)
 		}
 	} else if data.Has("error") {
-		TrayTip(data["error"],"Autotriage error", 0x13)
+		TrayTip(data["error"], "Autotriage error", 0x13)
 	} else {
 		r := Response(data)
 		if r.result && !manualStudySelect {
@@ -141,9 +134,9 @@ FillOutExam(bodyPart, code, extraCodes) { 	; Fill out "Body Part" and "Code"
 		case "CHEST/ABDO": SendEvent "{Home}CC"
 		case "CHEST": SendEvent "{Home}C"
 		default:
-			firstLetter := SubStr(bodyPart, 1,  1)
+			firstLetter := SubStr(bodyPart, 1, 1)
 			switch firstLetter {
-				case "A","N","O","S": SendEvent SubStr(bodyPart, 1,  2)
+				case "A", "N", "O", "S": SendEvent SubStr(bodyPart, 1, 2)
 				default: SendEvent firstLetter
 			}
 	}

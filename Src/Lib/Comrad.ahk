@@ -1,9 +1,10 @@
 #Include ../Common.ahk
 
 class ComradApp {
-    static MainAppWinTitle := "COMRAD Medical Systems Ltd"
+
+    static MainAppWinTitle := "Comrad Medical Systems Ltd ahk_class SunAwtFrame"
     static LoggedInWinTitle := this.MainAppWinTitle . ".*Client ID"
-    static SelectInterfaceWinTitle := "COMRAD Login - Select Network Interface"
+    static SelectInterfaceWinTitle := "Comrad Login - Select Network Interface"
     static ahk_exe := " ahk_exe javaw.exe"
 
     static WinActivate() {
@@ -83,9 +84,9 @@ class ComradApp {
     }
 
     static getUser(&user) {
-        r := RegExMatch(WinGetTitle("COMRAD Medical Systems Ltd. ahk_class SunAwtFrame"), "User:(\w+)", &match)
+        r := RegExMatch(WinGetTitle("Comrad Medical Systems Ltd ahk_class SunAwtFrame"), "User:(\w+)", &match)
         if (r) user := match[1]
-        return r
+            return r
     }
 
 }
